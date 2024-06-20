@@ -1,26 +1,26 @@
 <?php
 namespace App\Controller;
 
+use App\Service\ContactService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use App\Entity\Contact;
-use Doctrine\ORM\EntityManagerInterface;
-
 
 class ContactController extends AbstractController
 {
     private $logger;
+    private $contactService;
 
-    public function __construct(LoggerInterface $logger)
+    public function __construct(LoggerInterface $logger, ContactService $contactService)
     {
         $this->logger = $logger;
+        $this->contactService = $contactService;
     }
 
     #[Route('/contact', name: 'contact', methods: ['POST', 'OPTIONS'])]
-    public function contact(Request $request, EntityManagerInterface $manager): Response
+    public function contact(Request $request): Response
     {
         $this->logger->info('Received contact request');
 
@@ -44,31 +44,12 @@ class ContactController extends AbstractController
             ], 400);
         }
 
-        $nom = $data['nom'] ?? null;
-        $prenom = $data['prenom'] ?? null;
-        $email = $data['email'] ?? null;
-        $message = $data['message'] ?? null;
-
-        $this->logger->info('Contact form data', [
-            'nom' => $nom,
-            'prenom' => $prenom,
-            'email' => $email,
-            'message' => $message,
-        ]);
-
-        $contact = new Contact();
-        $contact->setName($nom);
-        $contact->setSurname($prenom);
-        $contact->setMail($email);
-        $contact->setMessage($message);
-        
-        $manager->persist($contact);
-        $manager->flush();
+        $contactData = $this->contactService->handleContactForm($data);
 
         return $this->json([
             'status' => 'success',
             'message' => 'Formulaire reçu avec succès',
-            'data' => compact('nom', 'prenom', 'email', 'message')
+            'data' => $contactData
         ]);
     }
 }
