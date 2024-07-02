@@ -41,6 +41,9 @@ class ContactService
         $contact->setSurname($prenom);
         $contact->setMail($email);
         $contact->setMessage($message);
+        $contact->setCreatedAt(new \DateTime('now', new \DateTimeZone('Europe/Paris')));
+
+        $this->logger->info($contact->getCreatedAt()->format('Y-m-d H:i:s'));
         
         $this->entityManager->persist($contact);
         $this->entityManager->flush();
